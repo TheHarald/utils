@@ -37,8 +37,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Check audio encoders and stores
-        run: npm run check
+      - name: Test
+        run: npm test
 
       # Хэш и дата сборки попадают в /info.json и показываются в футере сайта.
       - name: Create build info JSON file

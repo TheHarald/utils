@@ -18,9 +18,8 @@ export function trimPcm(pcm: PcmData, startSeconds: number, endSeconds: number):
   }
 }
 
-/** Усиление/ослабление сигнала (линейный коэффициент). */
-export function applyGain(pcm: PcmData, gain: number): PcmData {
-  const factor = clamp(gain, 0, 8)
+/** Общий множитель для усиления и нормализации: сэмплы клиппируются по −1…1. */
+function scalePcm(pcm: PcmData, factor: number): PcmData {
   return {
     sampleRate: pcm.sampleRate,
     channels: pcm.channels.map((data) => {
@@ -31,6 +30,11 @@ export function applyGain(pcm: PcmData, gain: number): PcmData {
       return output
     }),
   }
+}
+
+/** Усиление/ослабление сигнала (линейный коэффициент). */
+export function applyGain(pcm: PcmData, gain: number): PcmData {
+  return scalePcm(pcm, clamp(gain, 0, 8))
 }
 
 /** Максимальная амплитуда по всем каналам. */
@@ -57,7 +61,8 @@ export function normalizePcm(pcm: PcmData, targetDb = -1): PcmData {
   const peak = pcmPeak(pcm)
   if (peak <= 0.00001) return pcm
   const target = 10 ** (targetDb / 20)
-  return applyGain(pcm, target / peak)
+  // Множитель не ограничиваем как в applyGain: тихую запись тоже нужно поднять.
+  return scalePcm(pcm, target / peak)
 }
 
 /** Плавное появление в начале и затухание в конце. */

@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
 
 # Генерируется workflow перед сборкой, в git не нужен
 public/info.json

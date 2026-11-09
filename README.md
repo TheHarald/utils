@@ -31,6 +31,7 @@
 | Tailwind CSS 4 + shadcn/ui (radix-nova) | стили и доступные компоненты |
 | @breezystack/lamejs | кодирование MP3 в браузере |
 | react-router-dom (HashRouter) | маршруты, совместимые с GitHub Pages |
+| Vitest + jsdom | юнит-тесты логики, сторов и энкодеров |
 
 ## Команды
 
@@ -40,7 +41,8 @@ npm run dev       # dev-сервер (http://localhost:5173/utils/)
 npm run build     # типы + production-сборка в dist/
 npm run preview   # локальный просмотр собранного сайта
 npm run lint      # ESLint
-npm run check     # проверка WAV/MP3-энкодеров, правок и сторов в Node
+npm test          # тесты (Vitest, один прогон)
+npm run test:watch  # тесты в режиме наблюдения
 ```
 
 Запись с микрофона работает только на `localhost` или по HTTPS — это требование браузеров
@@ -61,7 +63,35 @@ src/
       VoiceRecorderPage.tsx
   lib/            форматирование, скачивание файлов, cn()
   stores/         RootStore (тема), контекст и провайдер
-scripts/          check-encoders.ts, check-store.ts — проверки без браузера
+```
+
+Тесты лежат рядом с кодом: `*.test.ts` в тех же папках, что и проверяемые модули.
+
+## Тесты
+
+Стек — [Vitest](https://vitest.dev) + `jsdom`. Конфиг отдельный (`vitest.config.ts`), чтобы
+тесты не тянули Tailwind и React-плагин из `vite.config.ts`; алиас `@` там продублирован.
+
+| Файл | Что проверяет |
+| --- | --- |
+| `src/lib/format.test.ts` | длительности, размеры файлов, `sanitizeFileName`, дБ ↔ амплитуда |
+| `src/app/build-info.test.ts` | разбор `/info.json`: BOM, битый JSON, неверные типы, формат даты |
+| `src/app/tools.test.ts` | реестр инструментов: уникальные слаги, категории, `getToolBySlug` |
+| `src/features/voice-recorder/lib/pcm.test.ts` | `createPcm`, длительность, клонирование, микширование в моно |
+| `src/features/voice-recorder/lib/audio-edit.test.ts` | обрезка, усиление, нормализация, фейды, удаление тишины, пики |
+| `src/features/voice-recorder/lib/encoders/wav.test.ts` | заголовок RIFF/WAVE, 16 бит, чередование каналов, клиппинг |
+| `src/features/voice-recorder/lib/encoders/mp3.test.ts` | frame sync, зависимость размера от битрейта, оценка размера |
+| `src/features/voice-recorder/lib/encoders/native.test.ts` | доступность `MediaRecorder`-форматов и понятные ошибки |
+| `src/features/voice-recorder/store/VoiceRecorderStore.test.ts` | выделение, правки, история, экспорт (скачивание замокано) |
+| `src/stores/themeStore.test.ts` | режимы темы, реакция на системную тему, сохранение выбора |
+
+По умолчанию окружение — `node` (быстро). Файлам, которым нужен DOM, достаточно первой строки
+`// @vitest-environment jsdom`; `matchMedia` в jsdom отсутствует, поэтому в тестах темы он подменяется стендом.
+
+```bash
+npm test                     # все тесты
+npx vitest run src/lib       # только папка
+npx vitest run -t "WAV"      # только тесты с подходящим названием
 ```
 
 ## Как добавить новый инструмент
@@ -99,11 +129,11 @@ scripts/          check-encoders.ts, check-store.ts — проверки без 
 
 | Job | Шаги |
 | --- | --- |
-| `build` | `npm ci` → `npm run lint` → `npm run check` → генерация `public/info.json` → `npm run build` → артефакт `production-files` (срок хранения 1 день) |
+| `build` | `npm ci` → `npm run lint` → `npm test` → генерация `public/info.json` → `npm run build` → артефакт `production-files` (срок хранения 1 день) |
 | `deploy` | скачивает артефакт и публикует `dist/` в ветку `gh-pages` через `peaceiris/actions-gh-pages@v4` с `force_orphan` (в ветке всегда один коммит, история артефактов не копится) |
 
 Триггеры: push в `main` и ручной запуск (**Actions → Deploy to GitHub Pages → Run workflow**).
-Если `lint` или `check` красные, ветка `gh-pages` не обновляется — сайт остаётся на прошлой сборке.
+Если `lint` или тесты красные, ветка `gh-pages` не обновляется — сайт остаётся на прошлой сборке.
 
 Права: workflow не запрашивает ничего лишнего — `build` работает с `contents: read`,
 `deploy` с `contents: write` (нужен только для пуша в `gh-pages`).
@@ -136,7 +166,7 @@ scripts/          check-encoders.ts, check-store.ts — проверки без 
 Локальный прогон того же пайплайна перед пушем:
 
 ```bash
-npm ci && npm run lint && npm run check && npm run build && npm run preview
+npm ci && npm run lint && npm test && npm run build && npm run preview
 ```
 
 Если репозиторий называется иначе, поменяйте `base` в `vite.config.ts` и `site.repoUrl`
