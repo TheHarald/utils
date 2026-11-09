@@ -18,8 +18,8 @@
   (доступность определяется через `MediaRecorder.isTypeSupported`);
 - всё аудио обрабатывается локально: `getUserMedia` → `decodeAudioData` → правки в `Float32Array` → скачивание.
 
-Остальные инструменты (JSON, Base64, QR, цвета, хеши, пароли, изображения, timestamp, regex, регистр, UUID)
-заведены в реестре со статусом «скоро».
+Остальные инструменты добавляются в реестр `TOOLS` (`src/app/tools.ts`) по мере готовности:
+карточка на главной появляется только вместе с рабочей страницей, анонсов «скоро» нет.
 
 ## Стек
 
@@ -76,7 +76,7 @@ src/
 | --- | --- |
 | `src/lib/format.test.ts` | длительности, размеры файлов, `sanitizeFileName`, дБ ↔ амплитуда |
 | `src/app/build-info.test.ts` | разбор `/info.json`: BOM, битый JSON, неверные типы, формат даты |
-| `src/app/tools.test.ts` | реестр инструментов: уникальные слаги, категории, `getToolBySlug` |
+| `src/app/tools.test.ts` | реестр инструментов: уникальные слаги, ленивые компоненты, категории, `getToolBySlug` |
 | `src/features/voice-recorder/lib/pcm.test.ts` | `createPcm`, длительность, клонирование, микширование в моно |
 | `src/features/voice-recorder/lib/audio-edit.test.ts` | обрезка, усиление, нормализация, фейды, удаление тишины, пики |
 | `src/features/voice-recorder/lib/encoders/wav.test.ts` | заголовок RIFF/WAVE, 16 бит, чередование каналов, клиппинг |
@@ -106,14 +106,13 @@ npx vitest run -t "WAV"      # только тесты с подходящим �
   description: 'Форматирование, минификация и проверка JSON.',
   icon: FileJson2,
   category: 'data',
-  status: 'available',
   tags: ['json'],
   component: lazy(() => import('@/features/json-formatter/JsonFormatterPage')),
 }
 ```
 
 3. Маршрут `/tools/<slug>` и карточка на главной появятся автоматически.
-   Пока инструмента нет, оставляйте `status: 'soon'` без `component`.
+   `component` обязателен: записей без рабочей страницы в реестре нет.
 
 ## Деплой на GitHub Pages
 

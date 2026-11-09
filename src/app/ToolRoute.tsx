@@ -8,11 +8,12 @@ import { getToolBySlug } from './tools'
 export default function ToolRoute() {
   const { slug } = useParams<{ slug: string }>()
   const tool = slug ? getToolBySlug(slug) : undefined
-  const ToolComponent = tool?.component
 
-  if (!tool || !ToolComponent) {
+  if (!tool) {
     return <NotFoundPage />
   }
+
+  const ToolComponent = tool.component
 
   return (
     <Suspense fallback={<PageLoader label="Загружаем инструмент…" />}>

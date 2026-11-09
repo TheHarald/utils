@@ -10,8 +10,8 @@ export default function NotFoundPage() {
       </span>
       <h1 className="mt-5 font-heading text-2xl font-semibold tracking-tight">Страница не найдена</h1>
       <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        Такого инструмента пока нет. Возможно, он ещё в разработке — загляните на главную и выберите
-        что-то из списка.
+        Такой страницы нет — возможно, ссылка устарела. Загляните на главную и выберите инструмент
+        из списка.
       </p>
       <Button asChild className="mt-6">
         <Link to="/">

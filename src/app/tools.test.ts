@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   TOOLS,
   TOOL_CATEGORIES,
-  countToolsByStatus,
   findCategory,
   getToolBySlug,
   toolHref,
@@ -34,10 +33,10 @@ describe('реестр инструментов', () => {
     }
   })
 
-  it('доступные инструменты имеют ленивый компонент, а «скоро» — нет', () => {
+  it('в реестре только готовые инструменты — с ленивым компонентом', () => {
+    expect(TOOLS.length).toBeGreaterThan(0)
     for (const tool of TOOLS) {
-      if (tool.status === 'available') expect(tool.component).toBeDefined()
-      else expect(tool.component).toBeUndefined()
+      expect(tool.component).toBeDefined()
     }
   })
 })
@@ -54,10 +53,3 @@ describe('getToolBySlug', () => {
   })
 })
 
-describe('countToolsByStatus', () => {
-  it('сумма совпадает с числом инструментов', () => {
-    const counts = countToolsByStatus()
-    expect(counts.available).toBeGreaterThanOrEqual(1)
-    expect(counts.available + counts.soon).toBe(TOOLS.length)
-  })
-})

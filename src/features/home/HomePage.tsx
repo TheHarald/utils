@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { site } from '@/app/site'
-import { TOOLS, TOOL_CATEGORIES, countToolsByStatus, type ToolCategory } from '@/app/tools'
+import { TOOLS, TOOL_CATEGORIES, type ToolCategory } from '@/app/tools'
 import { cn } from '@/lib/utils'
 import { ToolCard } from './ToolCard'
 
@@ -32,7 +32,11 @@ const HIGHLIGHTS = [
 export default function HomePage() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<CategoryFilter>(ALL_CATEGORIES)
-  const stats = useMemo(() => countToolsByStatus(), [])
+  // Чипы фильтра показываем только для категорий, где уже есть инструменты.
+  const categories = useMemo(
+    () => TOOL_CATEGORIES.filter((item) => TOOLS.some((tool) => tool.category === item.id)),
+    [],
+  )
 
   const filteredTools = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -55,7 +59,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center text-center">
           <Badge variant="outline" className="gap-1.5">
             <Sparkles aria-hidden="true" />
-            {stats.available} готово · {stats.soon} в разработке
+            Инструментов: {TOOLS.length}
           </Badge>
           <h1 className="mt-5 max-w-2xl font-heading text-4xl font-semibold tracking-tight text-balance-tight sm:text-5xl">
             Полезные утилиты, которые живут в браузере
@@ -72,7 +76,7 @@ export default function HomePage() {
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Найти инструмент: голос, json, цвет…"
+              placeholder="Найти инструмент: голос, mp3, wav…"
               aria-label="Поиск инструментов"
               className="h-10 pr-9 pl-9"
             />
@@ -101,7 +105,7 @@ export default function HomePage() {
         >
           Все
         </CategoryChip>
-        {TOOL_CATEGORIES.map((item) => (
+        {categories.map((item) => (
           <CategoryChip
             key={item.id}
             active={category === item.id}
