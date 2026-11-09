@@ -91,21 +91,50 @@ scripts/          check-encoders.ts, check-store.ts — проверки без 
 поэтому в `vite.config.ts` указан `base: '/utils/'`. Маршрутизация — `HashRouter`,
 чтобы прямые ссылки на инструменты не давали 404.
 
-1. В настройках репозитория: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Запушить в ветку `main` — workflow `.github/workflows/deploy.yml` прогонит lint,
-   проверку энкодеров и сборку, затем опубликует `dist/`.
+Публикация автоматическая: `.github/workflows/deploy.yml` на каждый push в `main`
+(и по кнопке **Run workflow**) прогоняет `npm run lint`, `npm run check`, `npm run build`
+и выкладывает `dist/` через `upload-pages-artifact` → `deploy-pages`. Если любой шаг
+красный, сайт не обновляется.
+
+### Разовая настройка (делает владелец репозитория)
+
+1. **Settings → Pages → Build and deployment → Source: `GitHub Actions`**.
+   Выбирается одним дропдауном и сохраняется сразу — ветку и папку указывать не нужно.
+2. **Settings → Environments**: после первого успешного деплоя появится окружение
+   `github-pages`. Если в нём включены required reviewers, деплой нужно подтвердить.
+3. **Actions → Deploy to GitHub Pages → Re-run all jobs** (или любой push в `main`) —
+   workflow опубликует текущий `dist/`.
+
+То же самое через API, если удобнее терминал (нужен PAT с доступом к репозиторию):
 
 ```bash
-git init
-git add .
-git commit -m "feat: utility site with voice recorder"
-git branch -M main
-git remote add origin https://github.com/theHarald/utils.git
-git push -u origin main
+curl -X POST \
+  -H "Authorization: Bearer $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/theHarald/utils/pages \
+  -d '{"build_type":"workflow"}'
+```
+
+Локальный прогон того же пайплайна перед пушем:
+
+```bash
+npm ci && npm run lint && npm run check && npm run build && npm run preview
 ```
 
 Если репозиторий называется иначе, поменяйте `base` в `vite.config.ts` и `site.repoUrl`
 в `src/app/site.ts`.
+
+### Если workflow упал на шаге `configure-pages`
+
+Ошибка `Get Pages site failed` / `404` значит, что Pages ещё не включён в настройках
+репозитория — включите его (шаг 1 выше) и перезапустите workflow. Шаги `lint`, `check`
+и `build` при этом уже зелёные, поэтому повторный прогон дойдёт до деплоя.
+
+### Свой домен (опционально)
+
+`public/CNAME` с доменом + DNS-запись `CNAME` на `theharald.github.io`, затем
+**Settings → Pages → Custom domain**. После этого `HashRouter` можно оставить как есть,
+а `base` заменить на `'/'` только если сайт переезжает в корень домена.
 
 ## Приватность
 

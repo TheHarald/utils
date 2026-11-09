@@ -17,8 +17,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
+      # Проверяем Pages первым шагом: если он не включён
+      # (Settings → Pages → Source: GitHub Actions), workflow падает сразу,
+      # а не после установки зависимостей и сборки.
+      - uses: actions/configure-pages@v5
 
       - uses: actions/setup-node@v4
         with:
@@ -36,8 +42,6 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
