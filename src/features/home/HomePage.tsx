@@ -76,7 +76,7 @@ export default function HomePage() {
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Найти инструмент: голос, mp3, wav…"
+              placeholder="Найти инструмент: голос, видео, mp3…"
               aria-label="Поиск инструментов"
               className="h-10 pr-9 pl-9"
             />

@@ -1,7 +1,15 @@
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
-import { AudioLines, type LucideIcon } from 'lucide-react'
+import { AudioLines, Clapperboard, type LucideIcon } from 'lucide-react'
 
-export type ToolCategory = 'audio' | 'text' | 'data' | 'web' | 'image' | 'security' | 'time'
+export type ToolCategory =
+  | 'audio'
+  | 'video'
+  | 'text'
+  | 'data'
+  | 'web'
+  | 'image'
+  | 'security'
+  | 'time'
 
 export interface ToolCategoryInfo {
   id: ToolCategory
@@ -21,6 +29,7 @@ export interface ToolDefinition {
 
 export const TOOL_CATEGORIES: ToolCategoryInfo[] = [
   { id: 'audio', label: 'Аудио' },
+  { id: 'video', label: 'Видео' },
   { id: 'text', label: 'Текст' },
   { id: 'data', label: 'Данные' },
   { id: 'web', label: 'Веб' },
@@ -44,6 +53,16 @@ export const TOOLS: ToolDefinition[] = [
     category: 'audio',
     tags: ['микрофон', 'mp3', 'wav', 'обрезка'],
     component: lazy(() => import('@/features/voice-recorder/VoiceRecorderPage')),
+  },
+  {
+    slug: 'video-editor',
+    title: 'Редактор видео',
+    description:
+      'Соберите ролик из нескольких видео: обрежьте фрагменты, поменяйте их местами и скачайте готовый файл.',
+    icon: Clapperboard,
+    category: 'video',
+    tags: ['видео', 'монтаж', 'обрезка', 'webm'],
+    component: lazy(() => import('@/features/video-editor/VideoEditorPage')),
   },
 ]
 

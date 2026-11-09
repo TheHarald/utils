@@ -51,5 +51,12 @@ describe('getToolBySlug', () => {
   it('возвращает undefined для неизвестного слага', () => {
     expect(getToolBySlug('nope')).toBeUndefined()
   })
+
+  it('находит редактор видео в категории «Видео»', () => {
+    const tool = getToolBySlug('video-editor')
+    expect(tool?.category).toBe('video')
+    expect(findCategory('video')?.label).toBe('Видео')
+    expect(toolHref(tool!)).toBe('/tools/video-editor')
+  })
 })
 

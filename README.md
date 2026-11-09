@@ -18,6 +18,18 @@
   (доступность определяется через `MediaRecorder.isTypeSupported`);
 - всё аудио обрабатывается локально: `getUserMedia` → `decodeAudioData` → правки в `Float32Array` → скачивание.
 
+**Редактор видео** (`/tools/video-editor`)
+
+- импорт видеофайлов перетаскиванием или через диалог: `object URL` + чтение метаданных
+  в скрытом `<video>`, файлы не покидают устройство;
+- шкала из фрагментов: выбор, перемотка по клику, резка по курсору, обрезка границ,
+  порядок фрагментов и удаление (файл освобождается, когда на него нет ссылок);
+- предпросмотр играет монтаж целиком, переключая источник между файлами;
+- экспорт: кадры рисуются на `canvas` (пропорции источника, чёрные поля), звук идёт через
+  Web Audio в `MediaStreamDestination`, поток пишет `MediaRecorder` — **WebM/VP9**,
+  **WebM/VP8** или **MP4** (Safari); высота 480p/720p/1080p, 24 или 30 к/с;
+- запись идёт в реальном времени: экспорт занимает примерно столько же, сколько длится ролик.
+
 Остальные инструменты добавляются в реестр `TOOLS` (`src/app/tools.ts`) по мере готовности:
 карточка на главной появляется только вместе с рабочей страницей, анонсов «скоро» нет.
 
@@ -27,7 +39,7 @@
 | --- | --- |
 | React 19 + TypeScript | интерфейс и типобезопасность |
 | Vite 8 | сборка и dev-сервер |
-| MobX 7 + mobx-react-lite | состояние (тема, редактор записи) |
+| MobX 7 + mobx-react-lite | состояние (тема, редакторы записи и видео) |
 | Tailwind CSS 4 + shadcn/ui (radix-nova) | стили и доступные компоненты |
 | @breezystack/lamejs | кодирование MP3 в браузере |
 | react-router-dom (HashRouter) | маршруты, совместимые с GitHub Pages |
@@ -61,6 +73,11 @@ src/
       store/      VoiceRecorderStore (MobX)
       components/ RecorderPanel, Waveform, PlaybackControls, EditorPanel, ExportPanel
       VoiceRecorderPage.tsx
+    video-editor/
+      lib/        timeline.ts, assets.ts, export-settings.ts, media.ts, export-video.ts
+      store/      VideoEditorStore (MobX)
+      components/ ImportPanel, PreviewPanel, TimelinePanel, ClipInspector, ExportPanel
+      VideoEditorPage.tsx
   lib/            форматирование, скачивание файлов, cn()
   stores/         RootStore (тема), контекст и провайдер
 ```
@@ -83,6 +100,10 @@ src/
 | `src/features/voice-recorder/lib/encoders/mp3.test.ts` | frame sync, зависимость размера от битрейта, оценка размера |
 | `src/features/voice-recorder/lib/encoders/native.test.ts` | доступность `MediaRecorder`-форматов и понятные ошибки |
 | `src/features/voice-recorder/store/VoiceRecorderStore.test.ts` | выделение, правки, история, экспорт (скачивание замокано) |
+| `src/features/video-editor/lib/timeline.test.ts` | длительности, поиск фрагмента по времени, обрезка, резка, порядок |
+| `src/features/video-editor/lib/assets.test.ts` | распознавание видеофайлов, подписи с разрешением и длительностью |
+| `src/features/video-editor/lib/export-settings.test.ts` | размеры кадра, выбор mime-типа, битрейт и прогноз размера |
+| `src/features/video-editor/store/VideoEditorStore.test.ts` | импорт, монтаж, экспорт (медиа и скачивание замоканы) |
 | `src/stores/themeStore.test.ts` | режимы темы, реакция на системную тему, сохранение выбора |
 
 По умолчанию окружение — `node` (быстро). Файлам, которым нужен DOM, достаточно первой строки

@@ -30,6 +30,9 @@ export function SiteHeader() {
           <NavLink to="/tools/voice-recorder" className={navLinkClass}>
             Запись голоса
           </NavLink>
+          <NavLink to="/tools/video-editor" className={navLinkClass}>
+            Редактор видео
+          </NavLink>
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
