@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "check:audio": "tsx scripts/check-encoders.ts",
     "check:store": "tsx scripts/check-store.ts",
-    "check": "npm run check:audio && npm run check:store",
+    "check:build-info": "tsx scripts/check-build-info.ts",
+    "check": "npm run check:audio && npm run check:store && npm run check:build-info",
     "preview": "vite preview"
   },
   "dependencies": {

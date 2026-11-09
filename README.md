@@ -91,29 +91,47 @@ scripts/          check-encoders.ts, check-store.ts — проверки без 
 поэтому в `vite.config.ts` указан `base: '/utils/'`. Маршрутизация — `HashRouter`,
 чтобы прямые ссылки на инструменты не давали 404.
 
-Публикация автоматическая: `.github/workflows/deploy.yml` на каждый push в `main`
-(и по кнопке **Run workflow**) прогоняет `npm run lint`, `npm run check`, `npm run build`
-и выкладывает `dist/` через `upload-pages-artifact` → `deploy-pages`. Если любой шаг
-красный, сайт не обновляется.
+Публикация идёт **через ветку `gh-pages`**: workflow собирает сайт и складывает готовый `dist/`
+в отдельную ветку, а GitHub Pages раздаёт содержимое этой ветки. Ветку не нужно ни создавать,
+ни трогать руками — её целиком перезаписывает следующий прогон.
 
-### Разовая настройка (делает владелец репозитория)
+### Что делает `.github/workflows/deploy.yml`
 
-1. **Settings → Pages → Build and deployment → Source: `GitHub Actions`**.
-   Выбирается одним дропдауном и сохраняется сразу — ветку и папку указывать не нужно.
-2. **Settings → Environments**: после первого успешного деплоя появится окружение
-   `github-pages`. Если в нём включены required reviewers, деплой нужно подтвердить.
-3. **Actions → Deploy to GitHub Pages → Re-run all jobs** (или любой push в `main`) —
-   workflow опубликует текущий `dist/`.
+| Job | Шаги |
+| --- | --- |
+| `build` | `npm ci` → `npm run lint` → `npm run check` → генерация `public/info.json` → `npm run build` → артефакт `production-files` (срок хранения 1 день) |
+| `deploy` | скачивает артефакт и публикует `dist/` в ветку `gh-pages` через `peaceiris/actions-gh-pages@v4` с `force_orphan` (в ветке всегда один коммит, история артефактов не копится) |
 
-То же самое через API, если удобнее терминал (нужен PAT с доступом к репозиторию):
+Триггеры: push в `main` и ручной запуск (**Actions → Deploy to GitHub Pages → Run workflow**).
+Если `lint` или `check` красные, ветка `gh-pages` не обновляется — сайт остаётся на прошлой сборке.
 
-```bash
-curl -X POST \
-  -H "Authorization: Bearer $GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github+json" \
-  https://api.github.com/repos/theHarald/utils/pages \
-  -d '{"build_type":"workflow"}'
+Права: workflow не запрашивает ничего лишнего — `build` работает с `contents: read`,
+`deploy` с `contents: write` (нужен только для пуша в `gh-pages`).
+
+### Разовая настройка (владелец репозитория)
+
+1. Первый прогон: **Actions → Deploy to GitHub Pages → Run workflow** (или push в `main`).
+   Он создаст ветку `gh-pages` — без неё шаг 2 не из чего выбирать.
+2. **Settings → Pages → Build and deployment → Source: `Deploy from a branch`**,
+   **Branch: `gh-pages`**, **Folder: `/ (root)`** → **Save**.
+3. Через минуту сайт откроется на `https://theHarald.github.io/utils/`;
+   после первого деплоя включится **Enforce HTTPS** (галочку GitHub ставит сам).
+
+`Settings → Actions → General → Workflow permissions` должен быть в режиме
+**Read and write permissions** — иначе пуш в `gh-pages` упадёт с `403`.
+Никаких секретов добавлять не нужно: `GITHUB_TOKEN` выдаётся автоматически.
+
+### Версия сборки в футере
+
+Перед сборкой CI создаёт `public/info.json`:
+
+```json
+{ "buildDate": "2026-11-09T17:45:12Z", "buildVersion": "4050ea9" }
 ```
+
+Файл попадает в `dist/info.json`, а футер показывает ссылку «сборка 4050ea9 · 09.11.2026»
+на соответствующий коммит. Локально файла нет (он в `.gitignore`) — футер просто не показывает версию.
+Кэш отключён (`cache: 'no-store'`), чтобы после деплоя не показывался старый хэш.
 
 Локальный прогон того же пайплайна перед пушем:
 
@@ -124,17 +142,20 @@ npm ci && npm run lint && npm run check && npm run build && npm run preview
 Если репозиторий называется иначе, поменяйте `base` в `vite.config.ts` и `site.repoUrl`
 в `src/app/site.ts`.
 
-### Если workflow упал на шаге `configure-pages`
+### Частые проблемы
 
-Ошибка `Get Pages site failed` / `404` значит, что Pages ещё не включён в настройках
-репозитория — включите его (шаг 1 выше) и перезапустите workflow. Шаги `lint`, `check`
-и `build` при этом уже зелёные, поэтому повторный прогон дойдёт до деплоя.
+| Симптом | Причина и решение |
+| --- | --- |
+| `403` на шаге `Deploy to GitHub Pages` | `Settings → Actions → General → Workflow permissions` стоит read-only — переключите на **Read and write** |
+| Pages пишет «Your site is ready to be published», но 404 | в `Settings → Pages` выбран не тот источник: нужен **Deploy from a branch → `gh-pages` → `/ (root)`** |
+| Сайт старый после зелёного прогона | кэш CDN Pages (до ~10 минут); проверьте `dist/info.json` в ветке `gh-pages` и хэш в футере |
+| Нужен деплой без коммита | **Actions → Deploy to GitHub Pages → Run workflow** (`workflow_dispatch`) |
 
 ### Свой домен (опционально)
 
 `public/CNAME` с доменом + DNS-запись `CNAME` на `theharald.github.io`, затем
-**Settings → Pages → Custom domain**. После этого `HashRouter` можно оставить как есть,
-а `base` заменить на `'/'` только если сайт переезжает в корень домена.
+**Settings → Pages → Custom domain**. `HashRouter` при этом менять не нужно,
+а `base` в `vite.config.ts` заменить на `'/'` — только если сайт переезжает в корень домена.
 
 ## Приватность
 

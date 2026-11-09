@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Генерируется workflow перед сборкой, в git не нужен
+public/info.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
