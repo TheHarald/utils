@@ -1,0 +1,6 @@
+# Нормализуем переводы строк, чтобы сборка на Linux (CI) совпадала с локальной
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.woff2 binary
